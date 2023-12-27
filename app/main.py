@@ -1,10 +1,14 @@
 from typing import List, Any
 from pydantic import BaseModel
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from starlette.websockets import WebSocket, WebSocketDisconnect
 import coloredlogs
 import logging
 from uuid import uuid4
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+
 
 coloredlogs.install(level="DEBUG")
 
@@ -17,8 +21,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
+
 
 MIN_USERS = 4
+
 
 class Payload(BaseModel):
     message: str
@@ -29,6 +38,11 @@ class User(BaseModel):
     id: str
     username: str
     connection: Any
+
+
+class Message(BaseModel):
+    username: str
+    message: str
 
 
 class Notifier:
@@ -59,6 +73,7 @@ class Notifier:
         self.connections.remove(websocket)
 
     async def _notify(self, message: str, id: str):
+        logger.warning(f"Connections: {len(self.connections)}")
         living_connections = []
         userMatch: User = next(
             (item for item in self.connections if item.id == id),
@@ -67,13 +82,16 @@ class Notifier:
         if userMatch == None:
             return
         userID = userMatch.id
+        username = userMatch.username
         while len(self.connections) > 0:
             # Looping like this is necessary in case a disconnection is handled
-            # during await websocket.send_text(message)
             user: User = self.connections.pop()
-            websocket = user.connection
+            if user.id == userID:  # don't send to self, handled in frontend
+                logger.error(userID)
+                continue
+            websocket: WebSocket = user.connection
             await websocket.send_json(
-                {"id": userID, "username": user.username, "message": message}
+                {"id": userID, "username": username, "message": message}
             )
             living_connections.append(user)
         self.connections = living_connections
@@ -87,9 +105,10 @@ async def websocket_endpoint(websocket: WebSocket):
     await notifier.connect(websocket)
     try:
         while True:
-            data = await websocket.receive_text()
-            logger.debug(f"Message:{data}")
-            await websocket.send_text(f"Message text was: {data}")
+            data = await websocket.receive_json()
+            logger.debug(f"Payload: {data}")
+            resp = Message(**data)
+            await websocket.send_json({"message": resp.message, "username": resp.username})
     except WebSocketDisconnect:
         notifier.remove(websocket)
 
@@ -98,6 +117,11 @@ async def websocket_endpoint(websocket: WebSocket):
 async def push_to_connected_websockets(id: str, message: str):
     logger.debug(f"Message: {message} from {id}")
     await notifier.push(id, message)
+
+
+@app.get("/")
+async def index(request: Request):
+    return templates.TemplateResponse(request=request, name="chat.html")
 
 
 @app.on_event("startup")

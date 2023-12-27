@@ -1,0 +1,83 @@
+{% extends "base.html" %} {% block head %} {{ super() }}
+<!-- <link href="{{ url_for('static', path='/css/chat.css') }}" rel="stylesheet" />
+<script src="{{ url_for('static',path='/js/chat.js') }}"></script> -->
+<link href="static/css/chat.css" rel="stylesheet">
+<script src="static/js/chat.js"></script>
+
+<script src="https://momentjs.com/downloads/moment.js"></script>
+{% endblock %} {% block body %}
+<div class="container-fluid">
+  <!--Toast message-->
+  <!-- <div
+    class="toast top-0 start-0"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+  >
+    <div class="toast-header">
+      <img src="..." class="rounded me-2" alt="..." />
+      <strong class="me-auto">User</strong>
+      <small>Just now</small>
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="toast"
+        aria-label="Close"
+      ></button>
+    </div>
+    <div class="toast-body">Has joined the chat!</div>
+  </div> -->
+
+  <div class="row">
+    <div class="container chat-window border border-3 border-dark-subtle rounded">
+      <div class="card visually-hidden">
+        <!--hide template card-->
+        <div class="card-header">
+          <i class="fa-regular fa-user"></i
+          ><span class="ml-5 username">Name</span>
+        </div>
+        <div class="card-body">
+          <blockquote class="blockquote mb-0">
+            <p class="message-text">A sample text message.</p>
+            <footer class="blockquote-footer">Timestamp</footer>
+          </blockquote>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="container chat-input">
+        <div class="input-group">
+          <span class="input-group-text dropup"
+            ><i
+              class="btn fa-sharp fa-regular fa-paper-plane bg-dark text-light rounded-circle"
+              onclick="sendMessage()"
+            ></i>
+            <i
+              class="btn fa-solid fa-paperclip bg-dark text-light rounded-circle dropdown-toggle"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+            ></i>
+            <ul class="dropdown-menu border-2 rounded-pill">
+              <i class="btn fa-solid fa-image bg-dark text-light rounded-circle
+              bg-dark text-light rounded-circle"></i>
+              <i class="btn fa-solid fa-headphones bg-dark text-light rounded-circle
+              bg-dark text-light rounded-circle"></i>
+              <i class="btn fa-regular fa-file bg-dark text-light rounded-circle
+              bg-dark text-light rounded-circle"></i>
+            </ul>
+            <!-- onclick="sendAttachment()" -->
+          </span>
+          <input
+            type="text"
+            class="form-control message-input"
+            placeholder="Hello there!"
+            aria-label="Username"
+            aria-describedby="basic-addon1"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
